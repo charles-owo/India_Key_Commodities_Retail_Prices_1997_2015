@@ -7,7 +7,7 @@ from sql_project.covid_data;
 select location, date, population, total_cases, new_cases, total_deaths,new_deaths
 from sql_project.covid_data  order by 1,2;
 
--- Death percentage
+-- Death percentage by Location
 select
     location,
     total_population,
@@ -28,26 +28,26 @@ where
     and location NOT IN ('World','Lower middle income','Upper middle income','High income','Low income','European Union')
 order by total_population desc ;
 
----Same But for Continent
+---Death percentage by Continent
 select
     *,
     (total_cases/total_population)*100 as percent_population_affected,
     (total_death/total_cases)*100 as case_fatality_percent,
     (total_death/total_population)*100 as death_rate
-from(select                         -----Outermost Query
+from(select                        
     continent,
     sum(tp) as total_population,
     sum(cd) as total_cases,
     sum(td) as total_death
 from(
-    select                     -----Outer Query
+    select                    
         continent,
         location ,
         tp,
         td,
         cd
     from(
-        select                 -----Innermost Query
+        select                 
             continent,
             location,
             total_deaths,
