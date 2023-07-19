@@ -1,11 +1,13 @@
---Getting Overview of Data by fetching Samples
+###############Getting Overview of Data by fetching Samples#######################
 select
     *
 from sql_project.india_retail
 order by RAND()
 limit 50;
 
--- Checking for Null Values
+----------------------------------------------------------------------------------------------------------
+
+###########Checking for Null Values###########
 select
     *
 from sql_project.india_retail
@@ -14,22 +16,25 @@ where Date IS NULL
    or Commodity IS NULL
    or Price_per_Kg IS NULL
    or Region IS NULL ;
+------------------------------------------------------------------------------------------------------------
 
---Getting Year of Data
+#############Getting Year of Data############
 select
     min(EXTRACT(YEAR from Date))as start_year,
     max(EXTRACT(YEAR from Date))as end_year
 from sql_project.india_retail ;
+------------------------------------------------------------------------------------------------------------
 
---Getting Count of Records BY Year
+###############Getting Count of Records BY Year#############
 select
     EXTRACT(YEAR from Date) as Year,
     count(*) as number_of_records
 from sql_project.india_retail
 group by 1
 order by 1;
+-------------------------------------------------------------------------------------------------------------
 
---Getting count of Categorical Values #there are two tables in this code
+###################Getting count of Categorical Values #there are two tables in this code####################
 with count_of_categories as
     ((select
           Centre ,
@@ -58,16 +63,16 @@ overview_category as(
         SUM(CASE WHEN Category = "Centre" Then 1 else 0 END ) as Centre
     from count_of_categories )
 select * from overview_category ;
-
+-----------------------------------------------------------------------------------------------------------------
 
 ---Uni variate Analysis-----
 
---Average Price
+###############Average Price#############
 select
     avg(Price_per_Kg) as avg_price
 from sql_project.india_retail ;
-
---Median Price
+--------------------------------------------------------------------------------------------------------------
+#############Median Price###############
 with cte as(select *,
        ROW_NUMBER() over (ORDER BY Price_per_Kg) as r_asc,
        COUNT(*) OVER() AS CNT
@@ -79,18 +84,20 @@ from cte
 WHERE r_asc = (CNT + 1)/2
    or r_asc = CNT/2
    or r_asc = (CNT/2) + 1;
+----------------------------------------------------------------------------------------------------------------
 
---Getting Range of Price
+
+######################Getting Range of Price##################
 select
     max(Price_per_Kg) as maximum_price,
     min(Price_per_Kg) as minimum_price,
     max(Price_per_Kg) - min(Price_per_Kg) as price_range
 from sql_project.india_retail;
+-------------------------------------------------------------------------------------------------------------------
 
+---Top to down Approach with reference to price
 
----Top to down Approach related to price
-
---Average/Median Price by Region
+#################Average/Median Price by Region##############
 with cte as (select
                  Region,
                  Price_per_Kg,
@@ -105,8 +112,9 @@ with cte as (select
          group by 1)
 select c.Region,avg(Price_per_Kg) as Average_Price ,Median_Price  from cte c INNER JOIN median m ON c.Region = m.Region
 group by 1,3 ;
+----------------------------------------------------------------------------------------------------------------------------
 
---Average Price by Centre
+####################Average Price by Centre####################
 with cte as (select
                  Centre,
                  Price_per_Kg,
@@ -121,9 +129,9 @@ with cte as (select
          group by 1)
 select c.Centre,avg(Price_per_Kg) as Average_Price ,Median_Price  from cte c INNER JOIN median m ON c.Centre = m.Centre
 group by 1,3 ;
+-------------------------------------------------------------------------------------------------------------------------------
 
-
---Average Price by Commodity
+##########Average Price by Commodity###########
 with cte as (select Commodity,
                  Price_per_Kg,
                  ROW_NUMBER() over (PARTITION BY Commodity ORDER BY Price_per_Kg) as r_asc,
@@ -137,9 +145,9 @@ with cte as (select Commodity,
          group by 1)
 select c.Commodity,avg(Price_per_Kg) as Average_Price ,Median_Price  from cte c INNER JOIN median m ON c.Commodity = m.Commodity
 group by 1,3 ;
+--------------------------------------------------------------------------------------------------------------------------------
 
-
---Monthly trend of Price
+################Monthly trend of Price###############
 select
     EXTRACT(Year from Date) as Year,
     EXTRACT(Month from Date) as Month,
@@ -147,8 +155,9 @@ select
 from sql_project.india_retail
 group by 1,2
 order by 1,2 ;
+--------------------------------------------------------------------------------------------------------------------------------
 
---Monthly Trend of Price By Region
+################Monthly Trend of Price By Region##########
 select
     Region,
     EXTRACT(Month from Date) as Month,
@@ -156,8 +165,9 @@ select
 from sql_project.india_retail
 group by 1,2
 order by 1,2 ;
+-------------------------------------------------------------------------------------------------------------------------------
 
---Monthly Trend of Price By Commodity
+##############Monthly Trend of Price By Commodity###########
 select
     Commodity,
     EXTRACT(Month from Date) as Month,
@@ -165,8 +175,9 @@ select
 from sql_project.india_retail
 group by 1,2
 order by 1,2 ;
+--------------------------------------------------------------------------------------------------------------------------------
 
---Monthly Trend of Price By Centre
+#######################Monthly Trend of Price By Centre#################
 select
     Centre,
     EXTRACT(Month from Date) as Month,
@@ -174,10 +185,10 @@ select
 from sql_project.india_retail
 group by 1,2
 order by 1,2 ;
+--------------------------------------------------------------------------------------------------------------------------------
 
 
-
---percent_total_of_relative_distribution_by_year
+###########################percent_total_of_relative_distribution_by_year##################
 with cte as(select
                 EXTRACT(Year from Date) as year ,
                 Commodity,
@@ -192,10 +203,10 @@ sum_over as(
             from cte )
 select *,ROUND(total_sales/sum,2) as percent_total from sum_over
 order by 1;
+----------------------------------------------------------------------------------------------------------------------------------
 
 
-
---Index to check how price has fluctuate over time for each region cpi
+##########################Index to check how price has fluctuate over time for each region cpi##############
 with cte as(select
                 EXTRACT(Year from Date) as year ,
                 Region,
@@ -214,11 +225,10 @@ select
     (CASE WHEN avg_sales = index_price then 0 else ((avg_sales-index_price)/index_price)*100 END) as percent_total
 from sum_over
 order by 2;
+----------------------------------------------------------------------------------------------------------------------------------
 
 
-
-
---yoy_commodity_price_change_for_each_region
+#################yoy_commodity_price_change_for_each_region##################
 with cte as(select
                 EXTRACT(Year from Date) as Year ,
                 EXTRACT(Month from Date) as Month,
@@ -243,10 +253,10 @@ select
     (CASE WHEN  index_price IS Null then 0 else ((avg_sales-index_price)/index_price) * 100 END) as pct_growth_from_previous
 from sum_over
 order by 3,2,1;
+-------------------------------------------------------------------------------------------------------------------------------------
 
 
-
---moving_average_commodities
+###############moving_average_commodities#######################
 select
     PARSE_DATE('%Y-%m-%d',CONCAT(Year,"-",Month,"-","01")) as Date,
     Commodity,
